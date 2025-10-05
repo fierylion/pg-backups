@@ -1,24 +1,46 @@
 services:
 
-  pg-backup:
+  # pg-backup:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.backup-17-alpine
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./backups:/backups
+  #     # Optional: Mount SSH key for rsync (only if RSYNC_ENABLED=true)
+  #     - /home/jek/.ssh/id_rsa:/root/.ssh/id_rsa:ro
+
+  #   deploy:
+  #     replicas: 1
+  #     restart_policy:
+  #       condition: unless-stopped
+  #     resources:
+  #       limits:
+  #         memory: 512M
+  #         cpus: '0.2'
+  #       reservations:
+  #         memory: 256M
+  #         cpus: '0.1'
+
+  # Automated restore testing (optional - uncomment to enable)
+  pg-restore-test:
     build:
       context: .
-      dockerfile: Dockerfile.backup-17-alpine
-    env_file:
-      - .env
+      dockerfile: Dockerfile.restore-test-17-alpine
+    # Or use published image:
+    # image: ghcr.io/user/pg-backups-restore-test:17-alpine
     volumes:
-      - ./backups:/backups
-      # Optional: Mount SSH key for rsync (only if RSYNC_ENABLED=true)
-      - /home/jek/.ssh/id_rsa:/root/.ssh/id_rsa:ro
-    
+      - /var/run/docker.sock:/var/run/docker.sock  # Access host Docker
+      - ./backups:/backups:ro
+      - ./restore-test-logs:/restore-test-logs
+    environment:
+      - TEST_SCHEDULE=0 0 1 * *  # Monthly on 1st at midnight
     deploy:
       replicas: 1
       restart_policy:
         condition: unless-stopped
       resources:
         limits:
-          memory: 512M
-          cpus: '0.2'
-        reservations:
           memory: 256M
           cpus: '0.1'

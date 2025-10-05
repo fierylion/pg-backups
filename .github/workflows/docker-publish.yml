@@ -31,6 +31,7 @@ jobs:
         image_type:
           - 'backup'
           - 'restore'
+          - 'restore-test'
 
     steps:
       - name: Checkout repository
@@ -52,6 +53,8 @@ jobs:
         run: |
           if [ "${{ matrix.image_type }}" = "restore" ]; then
             echo "suffix=-restore" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.image_type }}" = "restore-test" ]; then
+            echo "suffix=-restore-test" >> $GITHUB_OUTPUT
           else
             echo "suffix=" >> $GITHUB_OUTPUT
           fi

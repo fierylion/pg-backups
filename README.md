@@ -398,38 +398,95 @@ docker compose logs pg-backup | grep -i error
 
 ## Testing
 
-### Monthly Restore Test (Recommended)
+### Automated Restore Testing
+
+The system includes an automated restore test tool that validates backups by performing actual restores in isolated test containers.
+
+**Run manually:**
+```bash
+./restore-test.sh
+```
+
+**Run with Docker (scheduled):**
+```yaml
+# docker-compose.yml
+pg-restore-test:
+  image: ghcr.io/user/pg-backups-restore-test:17-alpine
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./backups:/backups:ro
+    - ./restore-test-logs:/restore-test-logs
+  environment:
+    - TEST_SCHEDULE=0 0 1 * *  # Monthly on 1st at midnight
+```
+
+**What it does:**
+1. Finds latest backup folder
+2. Creates isolated test container (PostgreSQL + PostGIS)
+3. Restores full cluster backup
+4. Verifies databases and roles
+5. Cleans up test container
+6. Logs results to timestamped file
+
+**Check test results:**
+```bash
+# View latest test log
+ls -lt restore-test-logs/ | head -1
+
+# Check for errors
+grep -i error restore-test-logs/restore-test_*.log | grep -v "already exists" | grep -v "cannot be dropped"
+
+# View full log
+cat restore-test-logs/restore-test_20251006_120000.log
+```
+
+**Log files:**
+```
+restore-test-logs/
+├── restore-test_20251006_120000.log
+├── restore-test_20251006_150000.log
+└── restore-test_20251007_120000.log
+```
+
+### Monthly Restore Test (Manual Script)
+
+For reference, the restore test script:
 
 ```bash
 #!/bin/bash
-# monthly-restore-test.sh
+# restore-test.sh
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_DIR="restore-test-logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${LOG_DIR}/restore-test_${TIMESTAMP}.log"
 
 BACKUP_FOLDER=$(ls -t backups/ | head -1)
 
-echo "Testing restore of backup: $BACKUP_FOLDER"
+echo "Testing restore of backup: $BACKUP_FOLDER" | tee -a "$LOG_FILE"
 
-# Create test container
+# Create test container (with PostGIS if needed)
 docker run -d --name postgres-test \
     -e POSTGRES_PASSWORD=test \
-    postgres:17-alpine
+    postgis/postgis:17-3.5
 
 sleep 5
 
 # Restore
 gunzip -c backups/${BACKUP_FOLDER}/postgres_cluster.sql.gz | \
-    docker exec -i postgres-test psql -U postgres
+    docker exec -i postgres-test psql -U postgres 2>&1 | tee -a "$LOG_FILE"
 
 # Verify
-echo "Databases:"
-docker exec postgres-test psql -U postgres -c "\l"
+echo "Databases:" | tee -a "$LOG_FILE"
+docker exec postgres-test psql -U postgres -c "\l" | tee -a "$LOG_FILE"
 
-echo -e "\nRoles:"
-docker exec postgres-test psql -U postgres -c "\du"
+echo -e "\nRoles:" | tee -a "$LOG_FILE"
+docker exec postgres-test psql -U postgres -c "\du" | tee -a "$LOG_FILE"
 
 # Cleanup
 docker rm -f postgres-test
 
-echo "✓ Restore test completed successfully"
+echo "✓ Restore test completed successfully" | tee -a "$LOG_FILE"
 ```
 
 ### Backup Integrity Check
@@ -614,17 +671,23 @@ Use during actual disaster recovery:
 
 ```
 pg-backups/
-├── backup-script.sh              # Main backup logic
-├── backup-cron.sh                # Cron wrapper
-├── restore-tool.sh               # Interactive restore CLI
-├── lib/                          # Helper libraries
-│   ├── backup-discovery.sh       # Find backups
-│   ├── backup-download.sh        # Download from S3/remote
-│   └── restore-executor.sh       # Execute restores
-├── Dockerfile.backup-17-alpine   # Backup service image
-├── Dockerfile.restore-17-alpine  # Restore tool image
-├── docker-compose.yml            # Service definition
-└── .env.example                  # Configuration template
+├── backup-script.sh                    # Main backup logic
+├── backup-cron.sh                      # Cron wrapper
+├── restore-tool.sh                     # Interactive restore CLI
+├── restore-test.sh                     # Automated restore test
+├── lib/                                # Helper libraries
+│   ├── backup-discovery.sh             # Find backups
+│   ├── backup-download.sh              # Download from S3/remote
+│   └── restore-executor.sh             # Execute restores
+├── Dockerfile.backup-17-alpine         # Backup service image
+├── Dockerfile.restore-17-alpine        # Restore tool image
+├── Dockerfile.restore-test-17-alpine   # Restore test image
+├── docker-compose.yml                  # Service definition
+├── .env.example                        # Configuration template
+├── backups/                            # Local backup storage
+│   └── YYYYMMDD_HHMMSS/                # Timestamped folders
+└── restore-test-logs/                  # Test results
+    └── restore-test_YYYYMMDD_HHMMSS.log
 ```
 
 ### Docker Images
@@ -637,14 +700,20 @@ pg-backups/
    - Interactive restore tool
    - Run on-demand for recovery
 
-Both built automatically via GitHub Actions.
+3. **Restore Test Image** - `ghcr.io/user/pg-backups-restore-test:17-alpine`
+   - Automated restore testing
+   - Validates backups monthly
+   - Creates timestamped log files
+
+All images built automatically via GitHub Actions.
 
 ---
 
 ## Monthly Checklist
 
-- [ ] Run restore test
-- [ ] Verify all backup destinations
+- [ ] Run restore test (automated via restore-test image)
+- [ ] Review restore test logs in `restore-test-logs/`
+- [ ] Verify all backup destinations (local/S3/remote)
 - [ ] Check backup logs for errors
 - [ ] Verify backup file integrity
 - [ ] Review storage usage and costs
