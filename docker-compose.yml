@@ -1,0 +1,24 @@
+services:
+
+  pg-backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup-17-alpine
+    env_file:
+      - .env
+    volumes:
+      - ./backups:/backups
+      # Optional: Mount SSH key for rsync (only if RSYNC_ENABLED=true)
+      - /home/jek/.ssh/id_rsa:/root/.ssh/id_rsa:ro
+    
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: unless-stopped
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.2'
+        reservations:
+          memory: 256M
+          cpus: '0.1'

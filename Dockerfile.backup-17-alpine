@@ -1,0 +1,24 @@
+FROM postgres:17-alpine
+
+# Install required dependencies
+RUN apk add --no-cache \
+    aws-cli \
+    openssh-client \
+    rsync \
+    bash
+
+# Create backup directory
+RUN mkdir -p /backups /var/log
+
+# Copy backup scripts
+COPY backup-script.sh /tmp/backup-script.sh
+COPY backup-cron.sh /tmp/backup-cron.sh
+
+# Make scripts executable
+RUN chmod +x /tmp/backup-script.sh /tmp/backup-cron.sh
+
+# Set working directory
+WORKDIR /backups
+
+# Default command
+CMD ["/tmp/backup-cron.sh"]

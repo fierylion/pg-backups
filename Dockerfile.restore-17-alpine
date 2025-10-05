@@ -1,0 +1,33 @@
+FROM postgres:17-alpine
+
+# Install required dependencies
+RUN apk add --no-cache \
+    aws-cli \
+    openssh-client \
+    rsync \
+    bash \
+    coreutils
+
+# Create directories
+RUN mkdir -p /backups /restore /lib
+
+# Copy helper libraries
+COPY lib/backup-discovery.sh /lib/backup-discovery.sh
+COPY lib/backup-download.sh /lib/backup-download.sh
+COPY lib/restore-executor.sh /lib/restore-executor.sh
+
+# Copy main restore tool
+COPY restore-tool.sh /usr/local/bin/restore-tool
+
+# Make scripts executable
+RUN chmod +x /lib/*.sh /usr/local/bin/restore-tool
+
+# Set working directory
+WORKDIR /restore
+
+# Environment variables with defaults
+ENV PGPORT=5432 \
+    RESTORE_DEST=/restore
+
+# Default command
+CMD ["/usr/local/bin/restore-tool"]
