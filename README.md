@@ -34,7 +34,7 @@ docker run --rm -it \
   -e PGHOST=postgres-primary \
   -e PGUSER=postgres \
   -e PGPASSWORD=yourpassword \
-  ghcr.io/user/pg-backups-restore:17-alpine
+  ghcr.io/jackkweyunga/pg-backups-restore:17-alpine
 ```
 
 ---
@@ -113,7 +113,7 @@ docker run --rm -it \
   -e PGHOST=postgres-primary \
   -e PGUSER=postgres \
   -e PGPASSWORD=secret \
-  ghcr.io/user/pg-backups-restore:17-alpine
+  ghcr.io/jackkweyunga/pg-backups-restore:17-alpine
 ```
 
 **Features:**
@@ -147,7 +147,7 @@ docker run --rm -it \
   -e S3_ACCESS_KEY=DO801... \
   -e S3_SECRET_KEY=NffZb... \
   -e S3_ENDPOINT=https://my-backups.fra1.digitaloceanspaces.com \
-  ghcr.io/user/pg-backups-restore:17-alpine
+  ghcr.io/jackkweyunga/pg-backups-restore:17-alpine
 ```
 
 ### With Remote Server Access
@@ -164,7 +164,7 @@ docker run --rm -it \
   -e RSYNC_HOST=196.200... \
   -e RSYNC_USER=dani \
   -e RSYNC_PATH=/home/user/test-pg-backups \
-  ghcr.io/user/pg-backups-restore:17-alpine
+  ghcr.io/jackkweyunga/pg-backups-restore:17-alpine
 ```
 
 ### Non-Interactive Mode (Automation)
@@ -181,7 +181,7 @@ docker run --rm \
   -e RESTORE_SOURCE=local \
   -e RESTORE_FOLDER=20251005_120000 \
   -e RESTORE_TYPE=cluster \
-  ghcr.io/user/pg-backups-restore:17-alpine
+  ghcr.io/jackkweyunga/pg-backups-restore:17-alpine
 ```
 
 **Environment Variables:**
@@ -411,7 +411,7 @@ The system includes an automated restore test tool that validates backups by per
 ```yaml
 # docker-compose.yml
 pg-restore-test:
-  image: ghcr.io/user/pg-backups-restore-test:17-alpine
+  image: ghcr.io/jackkweyunga/pg-backups-restore-test:17-alpine
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - ./backups:/backups:ro
@@ -692,15 +692,15 @@ pg-backups/
 
 ### Docker Images
 
-1. **Backup Image** - `ghcr.io/user/pg-backups:17-alpine`
+1. **Backup Image** - `ghcr.io/jackkweyunga/pg-backups:17-alpine`
    - Automated scheduled backups
    - Runs as a service with cron
 
-2. **Restore Image** - `ghcr.io/user/pg-backups-restore:17-alpine`
+2. **Restore Image** - `ghcr.io/jackkweyunga/pg-backups-restore:17-alpine`
    - Interactive restore tool
    - Run on-demand for recovery
 
-3. **Restore Test Image** - `ghcr.io/user/pg-backups-restore-test:17-alpine`
+3. **Restore Test Image** - `ghcr.io/jackkweyunga/pg-backups-restore-test:17-alpine`
    - Automated restore testing
    - Validates backups monthly
    - Creates timestamped log files
