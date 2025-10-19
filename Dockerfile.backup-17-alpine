@@ -1,11 +1,12 @@
 FROM ghcr.io/fierylion/postgres_postgis_pgvector:pg17
 
 # Install required dependencies
-RUN apk add --no-cache \
-    aws-cli \
+RUN apt-get update && apt-get install -y \
+    awscli \
     openssh-client \
     rsync \
-    bash
+    bash \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create backup directory
 RUN mkdir -p /backups /var/log
