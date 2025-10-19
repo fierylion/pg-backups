@@ -20,7 +20,7 @@ echo "Testing restore of backup: $BACKUP_FOLDER"
 # Create test container
 docker run -d --name postgres-test \
     -e POSTGRES_PASSWORD=test \
-    postgis/postgis:17-3.5
+    ghcr.io/fierylion/postgres_postgis_pgvector:pg18
     # postgres:17-alpine
 
 sleep 5

@@ -28,6 +28,7 @@ jobs:
       matrix:
         pg_version:
           - '17-alpine'
+          - '18-alpine'
         image_type:
           - 'backup'
           - 'restore'

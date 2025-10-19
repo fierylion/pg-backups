@@ -1,4 +1,4 @@
-FROM ghcr.io/fierylion/postgres_postgis_pgvector:pg17
+FROM ghcr.io/fierylion/postgres_postgis_pgvector:pg18
 
 # Install required dependencies
 RUN apk add --no-cache \
